@@ -1,6 +1,5 @@
-
 import { GoogleGenAI } from "@google/genai";
-import { BookAnglesData, ContentFormat, GeneratedHook } from '../types';
+import { BookAnglesData, ContentFormat, GeneratedHook, AnalyzedHook } from '../types';
 import { BOOK_ANGLES } from "../constants";
 
 // IMPORTANT: This assumes the API_KEY is set in the environment.
@@ -150,6 +149,53 @@ HOOK: [The actual hook content - be specific and compelling]
     return hooks;
 };
 
+export const analyzeHooksWithAI = async (hooks: GeneratedHook[]): Promise<AnalyzedHook[]> => {
+    const hooksText = hooks.map((h, i) => `${i + 1}. "${h.hookText}"`).join('\n');
+
+    const prompt = `You are a viral marketing expert specializing in BookTok and Instagram Reels. I have a list of potential marketing hooks for a book. Analyze this list and identify the top 10 most compelling and effective hooks.
+
+HOOK LIST:
+${hooksText}
+
+INSTRUCTIONS:
+1.  Review all the hooks provided.
+2.  Select the 10 hooks that are most likely to go viral, stop the scroll, and generate curiosity.
+3.  For each of the top 10 hooks, provide a brief, sharp reason (1-2 sentences) explaining WHY it's effective. Focus on marketing principles like curiosity gaps, emotional resonance, controversy, or relatability.
+4.  Rank them from 1 (the best) to 10.
+
+Format your response EXACTLY like this for each of the 10 hooks:
+RANK: [1-10]
+HOOK: "[The exact hook text]"
+REASON: [Your expert analysis]
+---`;
+
+    const response = await ai.models.generateContent({ model, contents: prompt });
+    const text = response.text;
+    
+    const analyzedHooks: AnalyzedHook[] = [];
+    const blocks = text.split('---').filter(b => b.trim());
+
+    for (const block of blocks) {
+        try {
+            const rankMatch = block.match(/RANK:\s*(\d+)/);
+            const hookMatch = block.match(/HOOK:\s*"([\s\S]*?)"/);
+            const reasonMatch = block.match(/REASON:\s*([\s\S]*)/);
+            
+            if (rankMatch && hookMatch && reasonMatch) {
+                analyzedHooks.push({
+                    rank: parseInt(rankMatch[1], 10),
+                    hookText: hookMatch[1].trim(),
+                    reason: reasonMatch[1].trim(),
+                });
+            }
+        } catch(e) {
+            console.error("Error parsing analyzed hook block:", block, e);
+        }
+    }
+    
+    return analyzedHooks.sort((a, b) => a.rank - b.rank);
+};
+
 export const generateScriptWithAI = async (
     angles: BookAnglesData,
     bookText: string,
@@ -157,11 +203,23 @@ export const generateScriptWithAI = async (
     formatName: string,
     category: string,
     length: string,
-    platform: string
+    platform: string,
+    pacing: string
 ): Promise<string> => {
     const anglesText = Object.entries(angles)
         .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
         .join('\n');
+    
+    const duration = parseInt(length, 10);
+    const chunks = duration / 15;
+    let minShots, maxShots;
+    if (pacing === 'fast') {
+        minShots = Math.ceil(chunks * 5);
+        maxShots = Math.ceil(chunks * 6);
+    } else { // Standard pacing
+        minShots = Math.ceil(chunks * 3);
+        maxShots = Math.ceil(chunks * 4);
+    }
     
     const prompt = `
 You are a video marketing scriptwriter specializing in book promotion AND AI video generation. Create a COMPLETE ${length}-second video script for ${platform} with detailed shot-by-shot prompts for AI video generators (like Runway, Pika, or Kling AI).
@@ -181,6 +239,7 @@ CATEGORY: ${category}
 VIDEO SPECIFICATIONS:
 - Length: ${length} seconds
 - Platform: ${platform}
+- Pacing: ${pacing}
 - Structure: HOOK (0-3s) -> BUILD (middle section) -> PAYOFF (emotional climax) -> CTA (final 5s)
 
 CRITICAL REQUIREMENTS:
@@ -194,7 +253,7 @@ CRITICAL REQUIREMENTS:
 8. Include camera movements (zoom in, pan right, dolly forward, etc.)
 9. Make it specific to THIS book's story, characters, and scenes.
 10. Make this script production-ready and specific to the book content provided!
-11. YOU MUST generate between 4 and 7 shots for the COMPLETE VIDEO SCRIPT section. Do not leave it empty.
+11. YOU MUST generate between ${minShots} and ${maxShots} distinct shots for the COMPLETE VIDEO SCRIPT section. Do not leave it empty.
 
 Format your response EXACTLY like this, using the delimiters to separate sections:
 
@@ -211,13 +270,14 @@ VOICEOVER/DIALOGUE: [exact words to speak]
 VISUAL DESCRIPTION: [what we see]
 AI GENERATION PROMPT: "[Detailed prompt for AI video generator with character descriptions, setting, camera angle, movement, lighting, mood. Reference the CHARACTER GUIDE and SETTING GUIDE for consistency]"
 ---
-[Continue with subsequent shots]
+[Continue with subsequent shots, ensuring you meet the required shot count of ${minShots}-${maxShots}.]
 
 ### PRODUCTION NOTES ###
 - Music/Sound: [Specific recommendations]
 - Text Overlays: [If needed, what text and when]
 - Transitions: [How shots connect]
 - Platform-Specific Tips: [[platform]-specific advice]
+- Suno AI Prompt: [Generate a detailed prompt for a music AI like Suno to create a soundtrack for this video. The prompt should specify genre, mood, tempo, instrumentation, and key moments to align with the script's narrative arc.]
 `;
     const response = await ai.models.generateContent({ model, contents: prompt });
     return response.text;

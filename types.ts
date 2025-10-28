@@ -1,4 +1,3 @@
-
 export type Tab = 'angles' | 'formats' | 'generator' | 'scripts';
 
 export interface BookAngle {
@@ -25,6 +24,12 @@ export interface GeneratedHook {
   variation: number;
   category: string;
   hookText: string;
+}
+
+export interface AnalyzedHook {
+  rank: number;
+  hookText: string;
+  reason: string;
 }
 
 export interface ScriptOutput {
@@ -63,6 +68,7 @@ export interface AppState {
   originalBookText: string;
   selectedFormatIds: number[];
   generatedHooks: GeneratedHook[];
+  topHooks: AnalyzedHook[];
   isLoading: { [key: string]: boolean };
   error: string | null;
   toasts: ToastMessage[];
@@ -80,6 +86,7 @@ export enum ActionType {
   ADD_TOAST = 'ADD_TOAST',
   REMOVE_TOAST = 'REMOVE_TOAST',
   SET_THEME = 'SET_THEME',
+  SET_TOP_HOOKS = 'SET_TOP_HOOKS',
 }
 
 export type AppAction =
@@ -92,4 +99,5 @@ export type AppAction =
   | { type: ActionType.LOAD_FROM_LOCALSTORAGE }
   | { type: ActionType.ADD_TOAST, payload: Omit<ToastMessage, 'id'> }
   | { type: ActionType.REMOVE_TOAST, payload: number }
-  | { type: ActionType.SET_THEME, payload: 'light' | 'dark' };
+  | { type: ActionType.SET_THEME, payload: 'light' | 'dark' }
+  | { type: ActionType.SET_TOP_HOOKS, payload: AnalyzedHook[] };

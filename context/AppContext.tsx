@@ -1,4 +1,3 @@
-
 import React, { createContext, Dispatch } from 'react';
 import { AppState, AppAction, ActionType } from '../types';
 
@@ -7,6 +6,7 @@ export const initialAppState: AppState = {
   originalBookText: '',
   selectedFormatIds: [],
   generatedHooks: [],
+  topHooks: [],
   isLoading: {},
   error: null,
   toasts: [],
@@ -31,7 +31,7 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     case ActionType.SET_SELECTED_FORMAT_IDS:
       return { ...state, selectedFormatIds: action.payload };
     case ActionType.SET_GENERATED_HOOKS:
-      return { ...state, generatedHooks: action.payload };
+        return { ...state, generatedHooks: action.payload, topHooks: [] }; // Reset analysis on new hooks
     case ActionType.LOAD_FROM_LOCALSTORAGE:
       const savedAngles = localStorage.getItem('bookAngles');
       const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -54,6 +54,8 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     case ActionType.SET_THEME:
       localStorage.setItem('theme', action.payload);
       return { ...state, theme: action.payload };
+    case ActionType.SET_TOP_HOOKS:
+      return { ...state, topHooks: action.payload };
     default:
       return state;
   }

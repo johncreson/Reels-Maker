@@ -1,11 +1,10 @@
-
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
-import { ActionType, ScriptOutput, Shot } from '../types';
-import { generateScriptWithAI } from '../services/geminiService';
+import { ActionType, ScriptOutput, Shot, AnalyzedHook } from '../types';
+import { generateScriptWithAI, analyzeHooksWithAI } from '../services/geminiService';
 import { TipBox } from './TipBox';
 import { Spinner } from './Spinner';
-import { GenerateIcon, CopyIcon } from './Icons';
+import { GenerateIcon, CopyIcon, MagicIcon } from './Icons';
 
 const ScriptDisplay: React.FC<{ script: ScriptOutput }> = ({ script }) => {
     const { dispatch } = useContext(AppContext);
@@ -51,14 +50,14 @@ const ScriptDisplay: React.FC<{ script: ScriptOutput }> = ({ script }) => {
                 <section>
                     <h3 className="text-xl font-bold text-[#667eea] dark:text-[#8b9ef7] mb-2">COMPLETE VIDEO SCRIPT</h3>
                     <div className="space-y-4">
-                        {script.videoScript.map(shot => (
+                        {script.videoScript.length > 0 ? script.videoScript.map(shot => (
                             <div key={shot.shotNumber} className="border-l-4 border-purple-200 dark:border-purple-600 pl-4">
                                 <h4 className="font-bold">SHOT {shot.shotNumber} - {shot.name} ({shot.timing})</h4>
                                 <p><strong className="text-purple-700 dark:text-purple-400">VOICEOVER/DIALOGUE:</strong> {shot.voiceover}</p>
                                 <p><strong className="text-purple-700 dark:text-purple-400">VISUAL DESCRIPTION:</strong> {shot.visual}</p>
                                 <p className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded text-sm"><strong className="text-purple-700 dark:text-purple-400">AI PROMPT:</strong> "{shot.aiPrompt}"</p>
                             </div>
-                        ))}
+                        )) : <p className="text-red-500">No shots were generated. The AI response might be incomplete.</p>}
                     </div>
                 </section>
                 <section>
@@ -81,12 +80,28 @@ const ScriptDisplay: React.FC<{ script: ScriptOutput }> = ({ script }) => {
     );
 }
 
+const AnalyzedHooksDisplay: React.FC<{ hooks: AnalyzedHook[] }> = ({ hooks }) => (
+    <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-center mb-4 text-[#667eea] dark:text-[#8b9ef7]">Top 10 Hooks Analysis</h2>
+        <div className="space-y-4">
+            {hooks.map(h => (
+                <div key={h.rank} className="p-4 border rounded-md dark:border-gray-700">
+                    <p className="font-bold text-lg">#{h.rank}: <span className="font-normal text-gray-800 dark:text-gray-200">"{h.hookText}"</span></p>
+                    <p className="mt-2 text-sm text-purple-700 dark:text-purple-400"><strong className="font-bold">REASON:</strong> {h.reason}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+
 export const TabCreateScripts: React.FC = () => {
     const { state, dispatch } = useContext(AppContext);
     const [selectedHook, setSelectedHook] = useState('');
     const [customHook, setCustomHook] = useState('');
     const [length, setLength] = useState('30');
     const [platform, setPlatform] = useState('TikTok');
+    const [pacing, setPacing] = useState('standard');
     const [script, setScript] = useState<ScriptOutput | null>(null);
     
     useEffect(() => {
@@ -97,7 +112,7 @@ export const TabCreateScripts: React.FC = () => {
         if(selectedHook) setCustomHook('');
     }, [selectedHook]);
 
-    const parseScriptResponse = (text: string, hook: string, length: string, platform: string): ScriptOutput => {
+    const parseScriptResponse = (text: string, hook: string, length: string, platform: string): ScriptOutput | null => {
         const charGuideMatch = text.match(/### CHARACTER GUIDE ###\s*([\s\S]*?)\s*### SETTING GUIDE ###/);
         const settingGuideMatch = text.match(/### SETTING GUIDE ###\s*([\s\S]*?)\s*### COMPLETE VIDEO SCRIPT ###/);
         const scriptBodyMatch = text.match(/### COMPLETE VIDEO SCRIPT ###\s*([\s\S]*?)\s*### PRODUCTION NOTES ###/);
@@ -125,6 +140,12 @@ export const TabCreateScripts: React.FC = () => {
                     });
                 }
             });
+        }
+        
+        if (videoScript.length === 0 && text.length > 50) {
+            dispatch({ type: ActionType.ADD_TOAST, payload: { message: 'Script parsing failed. AI response may be malformed. Please try again.', type: 'error' } });
+            console.error("Failed to parse shots from AI response:", text);
+            return null;
         }
         
         const hookData = state.generatedHooks.find(h => h.hookText === hook);
@@ -168,11 +189,15 @@ export const TabCreateScripts: React.FC = () => {
                 hookData?.formatName || 'Custom',
                 hookData?.category || 'Custom',
                 length,
-                platform
+                platform,
+                pacing
             );
             
             const parsedScript = parseScriptResponse(responseText, hookToUse, length, platform);
-            setScript(parsedScript);
+            if (parsedScript) {
+                setScript(parsedScript);
+                dispatch({ type: ActionType.ADD_TOAST, payload: { message: 'Script generated successfully!', type: 'success' } });
+            }
         } catch (error) {
             console.error("Error generating script:", error);
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during script generation.";
@@ -181,12 +206,46 @@ export const TabCreateScripts: React.FC = () => {
             dispatch({ type: ActionType.SET_LOADING, payload: { key: 'generatingScript', value: false } });
         }
     };
+    
+    const handleAnalyzeHooks = async () => {
+        if (state.generatedHooks.length === 0) {
+            dispatch({ type: ActionType.ADD_TOAST, payload: { message: 'Generate some hooks on the previous tab first!', type: 'warning' } });
+            return;
+        }
+        dispatch({ type: ActionType.SET_LOADING, payload: { key: 'analyzingHooks', value: true } });
+        try {
+            const topHooks = await analyzeHooksWithAI(state.generatedHooks);
+            dispatch({ type: ActionType.SET_TOP_HOOKS, payload: topHooks });
+            dispatch({ type: ActionType.ADD_TOAST, payload: { message: 'Top 10 hooks analyzed!', type: 'success' } });
+        } catch (error) {
+            console.error("Error analyzing hooks:", error);
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            dispatch({ type: ActionType.ADD_TOAST, payload: { message: `Analysis failed: ${errorMessage}`, type: 'error' } });
+        } finally {
+            dispatch({ type: ActionType.SET_LOADING, payload: { key: 'analyzingHooks', value: false } });
+        }
+    };
 
     return (
         <div className="max-w-4xl mx-auto">
             <TipBox>
-                <strong>Next Step:</strong> Select a hook from the dropdown OR write your own custom hook, then click 'Generate Script' to create a production-ready video script!
+                <strong>Next Step:</strong> Select a hook, set your video options, and click 'Generate Script'. For extra insight, analyze your hooks to find the top performers!
             </TipBox>
+
+            {state.generatedHooks.length > 0 && (
+                <div className="my-8 text-center">
+                    <button
+                        onClick={handleAnalyzeHooks}
+                        disabled={state.isLoading.analyzingHooks}
+                        className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-transform hover:scale-105 disabled:opacity-50"
+                    >
+                        <MagicIcon /> {state.topHooks.length > 0 ? 'Re-Analyze Top 10 Hooks' : 'Find My Top 10 Hooks'}
+                    </button>
+                </div>
+            )}
+
+            {state.isLoading.analyzingHooks && <Spinner message="AI is analyzing your hooks..." />}
+            {state.topHooks.length > 0 && <AnalyzedHooksDisplay hooks={state.topHooks} />}
 
             <div className="my-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md space-y-4">
                 <div>
@@ -201,14 +260,14 @@ export const TabCreateScripts: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">2. Write Custom Hook</label>
                     <textarea value={customHook} onChange={e => setCustomHook(e.target.value)} placeholder="Write your own hook here..." className="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:ring-[#667eea] focus:border-[#667eea]"></textarea>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">3. Video Length</label>
                         <select value={length} onChange={e => setLength(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-[#667eea] focus:border-[#667eea] sm:text-sm rounded-md">
-                            <option value="15">15 seconds (TikTok/Reels)</option>
-                            <option value="30">30 seconds (TikTok/Reels)</option>
-                            <option value="60">60 seconds (TikTok/Reels/YouTube Shorts)</option>
-                            <option value="90">90 seconds (YouTube)</option>
+                            <option value="15">15 seconds</option>
+                            <option value="30">30 seconds</option>
+                            <option value="60">60 seconds</option>
+                            <option value="90">90 seconds</option>
                         </select>
                     </div>
                     <div>
@@ -218,6 +277,13 @@ export const TabCreateScripts: React.FC = () => {
                             <option>Instagram Reels</option>
                             <option>YouTube Shorts</option>
                             <option>Universal</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">5. Pacing</label>
+                        <select value={pacing} onChange={e => setPacing(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-[#667eea] focus:border-[#667eea] sm:text-sm rounded-md">
+                            <option value="standard">Standard (3-4 shots/15s)</option>
+                            <option value="fast">Fast-Paced (5-6 shots/15s)</option>
                         </select>
                     </div>
                 </div>
