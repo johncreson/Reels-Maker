@@ -1,0 +1,58 @@
+
+import { BookAngle, ContentFormat } from './types';
+
+export const BOOK_ANGLES: BookAngle[] = [
+    { id: 'bookTitle', name: 'Book Title', emoji: '📖', placeholder: 'Enter your book title', helpText: 'The official title of your book.' },
+    { id: 'readerFantasy', name: 'Reader Fantasy', emoji: '🧚‍♀️', placeholder: "What dream does your story fulfill? (e.g., 'escaping mundane life,' 'finding true love against all odds')", helpText: "The aspirational experience readers crave" },
+    { id: 'emotionalWreckage', name: 'Emotional Wreckage', emoji: '💔', placeholder: "The gut-punch moment that destroys readers (e.g., a betrayal, sacrifice, reunion)", helpText: "The moment that makes readers ugly cry" },
+    { id: 'identityMirror', name: 'Identity Mirror', emoji: '🪞', placeholder: "Who sees themselves in this? (e.g., 'burnt-out millennials,' 'second-chance romance lovers')", helpText: "Your ideal reader's identity" },
+    { id: 'cultureHook', name: 'Culture Hook', emoji: '🌍', placeholder: "Unique references (e.g., 'Greek mythology meets cyberpunk,' 'K-drama tropes in Victorian England')", helpText: "Pop culture mashups that grab attention" },
+    { id: 'personalWound', name: 'Personal Wound', emoji: '🩹', placeholder: "The painful truth behind the story (even if fictionalized)", helpText: "The vulnerability that makes it authentic" },
+    { id: 'cinematicMoment', name: 'Cinematic Moment', emoji: '🎬', placeholder: "The most visual, movie-worthy scene", helpText: "The scene you'd pay to see on the big screen" },
+    { id: 'whatIfSetup', name: '"What If?" Setup', emoji: '❓', placeholder: "Your high-concept premise (e.g., 'What if soulmates could only meet once?')", helpText: "The intriguing premise in one sentence" },
+    { id: 'tropeTwist', name: 'Trope Twist', emoji: '🔄', placeholder: "How you subvert expectations (e.g., 'The chosen one... refuses the call')", helpText: "The familiar element you flip on its head" },
+    { id: 'shockFactor', name: 'Shock Factor', emoji: '⚡️', placeholder: "The moment that makes readers gasp", helpText: "The plot point no one sees coming" }
+];
+
+export const CONTENT_FORMATS: ContentFormat[] = [
+    { id: 1, name: "First line reveal", category: "Shock & Curiosity", example: "The first line is... and it changes everything." },
+    { id: 2, name: "This book understood...", category: "Relatable & Identity", example: "This book understood what it's like to feel..." },
+    { id: 3, name: "POV: You just read...", category: "POV & Immersion", example: "POV: You just read the scene where..." },
+    { id: 4, name: "Things nobody tells you about...", category: "Mystery", example: "Things nobody tells you about falling for a villain..." },
+    { id: 5, name: "The scene that broke me", category: "Relatable & Identity", example: "Let's talk about the scene that broke me..." },
+    { id: 6, name: "If you loved X, read this", category: "Data & Social Proof", example: "If you loved Fourth Wing, you HAVE to read this." },
+    { id: 7, name: "Unpopular opinion", category: "Controversial & Contrarian", example: "Unpopular opinion: [Character] deserved better." },
+    { id: 8, name: "Why everyone needs this book", category: "Data & Social Proof", example: "Here's why this book is the only one you need." },
+    { id: 9, name: "The moment I knew...", category: "Transformation & Journey", example: "The moment I knew [Character] was never going to be the same." },
+    { id: 10, name: "Books for people who...", category: "Relatable & Identity", example: "Books for people who are tired of the chosen one trope." },
+    { id: 11, name: "What if I told you...", category: "Mystery", example: "What if I told you the hero is actually the villain?" },
+    { id: 12, name: "Before vs After reading", category: "Transformation & Journey", example: "Me before reading this book vs Me after." },
+    { id: 13, name: "The plot twist nobody saw", category: "Shock & Curiosity", example: "The plot twist in this book had my jaw on the floor." },
+    { id: 14, name: "This book will make you...", category: "Aspirational & Escapist", example: "This book will make you want to quit your job and move to a remote cabin." },
+    { id: 15, name: "Biggest misconception", category: "Controversial & Contrarian", example: "The biggest misconception about this book is..." },
+    { id: 16, name: "If you've ever felt...", category: "Relatable & Identity", example: "If you've ever felt like you're not enough, read this." },
+    { id: 17, name: "Red flags in books", category: "Controversial & Contrarian", example: "Let's talk about the reddest flag in this book's love interest." },
+    { id: 18, name: "Character that lives rent-free", category: "Relatable & Identity", example: "This character now lives in my head rent-free." },
+    { id: 19, name: "Here's a secret...", category: "Mystery", example: "Here's a secret about the ending you might have missed." },
+    { id: 20, name: "Romance trope tier list", category: "Data & Social Proof", example: "Ranking the tropes in this book from 'meh' to 'masterpiece'." },
+    { id: 21, name: "Imagine being this character", category: "Aspirational & Escapist", example: "Imagine being the character that gets to..." },
+    { id: 22, name: "I can't be the only one...", category: "Relatable & Identity", example: "I can't be the only one who cried during chapter 12." },
+    { id: 23, name: "Warning signs you'll love this", category: "Data & Social Proof", example: "3 warning signs that you're about to be obsessed with this book." },
+    { id: 24, name: "The real villain is...", category: "Shock & Curiosity", example: "The real villain of this story isn't who you think." },
+    { id: 25, name: "Books that hit different", category: "Transformation & Journey", example: "This book just hits different." },
+    { id: 26, name: "Tell me you read X without...", category: "POV & Immersion", example: "Tell me you read this book without telling me you read it." },
+    { id: 27, name: "Day in the life of...", category: "POV & Immersion", example: "A day in the life of the main character would be..." },
+    { id: 28, name: "Hot take", category: "Controversial & Contrarian", example: "Hot take: This book is better than the one everyone compares it to." },
+    { id: 29, name: "The ending ruined me", category: "Relatable & Identity", example: "I'm not okay. The ending of this book completely ruined me." },
+    { id: 30, name: "Statistics that prove...", category: "Data & Social Proof", example: "93% of readers say this book changed their life." },
+    { id: 31, name: "Choose your character", category: "Aspirational & Escapist", example: "If you were in this world, would you be the Scholar or the Warrior?" },
+    { id: 32, name: "Confession time", category: "Mystery", example: "Confession time: I thought I knew the plot twist, but I was so wrong." },
+    { id: 33, name: "Slow burn done right", category: "Data & Social Proof", example: "This is how you do a slow burn romance." },
+    { id: 34, name: "Author's hidden message", category: "Mystery", example: "Did anyone else catch the author's hidden message on page 54?" },
+    { id: 35, name: "Why I DNF'd most books", category: "Controversial & Contrarian", example: "Why I DNF most fantasy books but finished this one in a day." },
+    { id: 36, name: "Emotional damage scale", category: "Relatable & Identity", example: "Rating the emotional damage of this book: 11/10." },
+    { id: 37, name: "Manifesting this energy", category: "Aspirational & Escapist", example: "Manifesting the main character's energy for the rest of the year." },
+    { id: 38, name: "Shock/Surprise hook", category: "Shock & Curiosity", example: "You think you know what's happening. You don't." },
+    { id: 39, name: "Book hangover cure", category: "Transformation & Journey", example: "Just finished a great book and have a book hangover? This is the cure." },
+    { id: 40, name: "Underrated gem", category: "Data & Social Proof", example: "This book is the most underrated gem of the year." }
+];
